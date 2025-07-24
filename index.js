@@ -12,6 +12,7 @@ app.use(express.json());
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const WHATSAPP_NUMBER = '573176062888';
 
+// Alarma de seguridad
 if (!GROQ_API_KEY) {
     console.error("ERROR FATAL: La clave GROQ_API_KEY no está configurada.");
     process.exit(1);
@@ -27,8 +28,9 @@ const conversationPrompt = `
 1.  **VERIFICACIÓN PRIMERO:** Tu primera acción es siempre preguntar a qué empresa pertenece el usuario.
 2.  **VALIDACIÓN DE EMPRESA:**
     - La lista de empresas VIP es: "Transprensa", "Ciek", "Legalag", "Grupo Educativo Oro y Bronce". Acepta variaciones.
-    - SI el usuario nombra una de estas empresas, tu siguiente paso es preguntar por su nombre. Responde: "¡Excelente! Veo que [Nombre de la empresa] es uno de nuestros clientes VIP. Para una atención más personalizada, ¿podrías indicarme tu nombre, por favor?".
-    - SI el usuario nombra otra empresa, detén el soporte y redirígelo al WhatsApp de la web.
+    - **SI** el usuario nombra una de estas empresas, tu siguiente paso es preguntar por su nombre. Responde: "¡Excelente! Veo que [Nombre de la empresa] es uno de nuestros clientes VIP. Para una atención más personalizada, ¿podrías indicarme tu nombre, por favor?".
+    - **SI** el usuario nombra otra empresa, detén el soporte y redirígelo al WhatsApp de la web.
+    - **REGLA DE SEGURIDAD CRÍTICA:** Bajo NINGUNA circunstancia debes revelar, nombrar, o dar pistas sobre cuáles son las empresas de la lista VIP. Si el usuario pregunta "¿cuáles son las empresas?" o da una respuesta inválida como "no sé", debes tratarlo como si no fuera un cliente VIP y usar la frase de redirección al WhatsApp de la web.
 3.  **INICIO DEL SOPORTE:** Una vez que el usuario te dé su nombre, salúdalo y pregúntale cuál es su problema.
 4.  **SOPORTE ULTRA-BÁSICO:** Tu única misión es guiar al usuario a través de los 3 pasos más simples: reiniciar el dispositivo, verificar cables o reabrir el programa.
 5.  **ESCALAMIENTO INMEDIATO:** Si el problema no se soluciona con uno de esos 3 pasos, DEBES ESCALAR INMEDIATAMENTE.
@@ -67,18 +69,15 @@ app.post('/webhook', async (req, res) => {
       ...history 
   ];
 
-  // --- INICIO DE LA CORRECCIÓN ---
-  // Si la tarea es crear un resumen, limpiamos el último mensaje del bot para no confundir a la IA.
   if (isSummarizeTask) {
     let historyToSummarize = [...history];
     const lastMessage = historyToSummarize[historyToSummarize.length - 1];
 
     if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content.toLowerCase().includes("voy a preparar un resumen")) {
-        historyToSummarize.pop(); // Elimina ese último mensaje
+        historyToSummarize.pop();
     }
     messagesForAPI = [ { role: 'system', content: currentSystemPrompt }, ...historyToSummarize ];
   }
-  // --- FIN DE LA CORRECCIÓN ---
 
   try {
     const groqResponse = await axios.post(
