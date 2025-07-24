@@ -37,7 +37,7 @@ const conversationPrompt = `
 8.  **VENTAS Y LICENCIAMIENTO:** Si te preguntan por ventas o precios, redirige al WhatsApp de la web.
 `;
 
-// --- PROMPT 2: Para crear el resumen (NUEVA VERSIÓN MÁS DIRECTA) ---
+// --- PROMPT 2: Para crear el resumen ---
 const summaryPrompt = `
 # TAREA ESTRICTA: RESUMEN DE SOPORTE
 Tu única función es leer el siguiente historial de chat y generar un resumen de una sola línea para un técnico. El resumen debe incluir el nombre del cliente (si lo encuentras), su empresa, el problema reportado y lo que ya se intentó.
@@ -62,10 +62,23 @@ app.post('/webhook', async (req, res) => {
   const isSummarizeTask = task === 'get_summary_link';
   const currentSystemPrompt = isSummarizeTask ? summaryPrompt : conversationPrompt;
   
-  const messagesForAPI = [
+  let messagesForAPI = [
       { role: 'system', content: currentSystemPrompt },
       ...history 
   ];
+
+  // --- INICIO DE LA CORRECCIÓN ---
+  // Si la tarea es crear un resumen, limpiamos el último mensaje del bot para no confundir a la IA.
+  if (isSummarizeTask) {
+    let historyToSummarize = [...history];
+    const lastMessage = historyToSummarize[historyToSummarize.length - 1];
+
+    if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content.toLowerCase().includes("voy a preparar un resumen")) {
+        historyToSummarize.pop(); // Elimina ese último mensaje
+    }
+    messagesForAPI = [ { role: 'system', content: currentSystemPrompt }, ...historyToSummarize ];
+  }
+  // --- FIN DE LA CORRECCIÓN ---
 
   try {
     const groqResponse = await axios.post(
