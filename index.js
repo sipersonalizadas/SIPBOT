@@ -37,14 +37,13 @@ const conversationPrompt = `
 8.  **VENTAS Y LICENCIAMIENTO:** Si te preguntan por ventas o precios, redirige al WhatsApp de la web.
 `;
 
-// --- PROMPT 2: Para crear el resumen (¡ESTA ES LA PARTE NUEVA Y MEJORADA!) ---
+// --- PROMPT 2: Para crear el resumen (NUEVA VERSIÓN MÁS DIRECTA) ---
 const summaryPrompt = `
-# TAREA CRÍTICA: RESUMEN DE SOPORTE TÉCNICO
-- Eres un asistente de IA que analiza historiales de chat y extrae la información clave para un técnico humano.
-- A continuación recibirás un historial de chat en formato JSON.
-- Tu única tarea es generar un resumen conciso en 2 o 3 frases.
-- **Formato del Resumen:** "Cliente: [Nombre del usuario], Empresa: [Nombre de la empresa]. Problema: [Describe el problema del usuario]. Pasos intentados: [Menciona las soluciones que el bot ya sugirió]."
-- **Reglas:** No saludes, no te despidas, no añadas explicaciones. Solo entrega el resumen en el formato solicitado. Si no puedes identificar el nombre o la empresa, omite esa parte.
+# TAREA ESTRICTA: RESUMEN DE SOPORTE
+Tu única función es leer el siguiente historial de chat y generar un resumen de una sola línea para un técnico. El resumen debe incluir el nombre del cliente (si lo encuentras), su empresa, el problema reportado y lo que ya se intentó.
+NO saludes. NO te despidas. NO añadas texto introductorio. Solo escribe la frase del resumen.
+EJEMPLO DE SALIDA PERFECTA: "Cliente: Juan Pérez de Transprensa. Problema: El mouse no funciona. Pasos intentados: Reiniciar el computador."
+Ahora, resume el siguiente historial:
 `;
 
 // --- RUTAS DE LA APLICACIÓN ---
@@ -77,7 +76,6 @@ app.post('/webhook', async (req, res) => {
     const botReply = groqResponse.data.choices[0].message.content.trim();
 
     if (isSummarizeTask) {
-      // Log de diagnóstico para ver el resumen que genera la IA
       console.log(`INFO: Resumen generado por la IA: "${botReply}"`);
       
       const encodedSummary = encodeURIComponent(botReply);
