@@ -46,7 +46,7 @@ const conversationPrompt = `
 5.  **VENTAS Y LICENCIAMIENTO:** Si te preguntan por ventas, redirige al WhatsApp de la web.
 `;
 
-// --- PROMPT 2: Para crear el resumen (sin cambios) ---
+// --- PROMPT 2: Para crear el resumen ---
 const summaryPrompt = `
 # TAREA ESTRICTA: RESUMEN DE SOPORTE
 Tu única función es leer el siguiente historial de chat y generar un resumen de una sola línea para un técnico. El resumen debe incluir el nombre del cliente (si lo encuentras), su empresa, el problema reportado y lo que ya se intentó.
@@ -55,7 +55,7 @@ EJEMPLO DE SALIDA PERFECTA: "Cliente: Juan Pérez de Transprensa. Problema: El m
 Ahora, resume el siguiente historial:
 `;
 
-// --- RUTAS DE LA APLICACIÓN (sin cambios) ---
+// --- RUTAS DE LA APLICACIÓN ---
 app.get('/', (req, res) => {
     res.send('El Cerebro del chatbot está funcionando correctamente.');
 });
@@ -82,7 +82,7 @@ app.post('/webhook', async (req, res) => {
   try {
     const groqResponse = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
-      { model: 'llama-3.1-8b-instant', messages: messagesForAPI }, // <--- MODELO ACTUALIZADO AQUÍ
+      { model: 'llama-3.1-8b-instant', messages: messagesForAPI },
       { headers: { Authorization: `Bearer ${GROQ_API_KEY}` } }
     );
     const botReply = groqResponse.data.choices[0].message.content.trim();
@@ -95,11 +95,12 @@ app.post('/webhook', async (req, res) => {
       res.status(200).json({ reply: botReply });
     }
   } catch (error) {
-    console.error('ERROR:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Hubo un error al contactar con la IA.' });
+    const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
+    console.error('ERROR:', errorMsg);
+    res.status(500).json({ error: 'Error de IA: ' + errorMsg });
   }
 });
 
-// --- ARRANQUE DEL SERVIDOR (sin cambios) ---
+// --- ARRANQUE DEL SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor "Cerebro" corriendo en el puerto ${PORT}`));
