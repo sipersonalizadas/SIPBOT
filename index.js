@@ -82,7 +82,7 @@ app.post('/webhook', async (req, res) => {
   try {
     const groqResponse = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
-      { model: 'llama3-8b-8192', messages: messagesForAPI },
+      { model: 'llama-3.1-8b-instant', messages: messagesForAPI }, // <--- MODELO ACTUALIZADO AQUÍ
       { headers: { Authorization: `Bearer ${GROQ_API_KEY}` } }
     );
     const botReply = groqResponse.data.choices[0].message.content.trim();
