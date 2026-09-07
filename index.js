@@ -137,6 +137,7 @@ app.post('/webhook', async (req, res) => {
         historyToSummarize.pop();
     }
 
+    // Convertir historial a texto plano para el resumen (ahorra tokens al descartar el base64 de la imagen)
     const cleanedHistory = historyToSummarize.map(msg => {
       if (Array.isArray(msg.content)) {
         const textPart = msg.content.find(p => p.type === 'text');
@@ -150,12 +151,14 @@ app.post('/webhook', async (req, res) => {
 
     messagesForAPI = [ { role: 'system', content: currentSystemPrompt }, ...cleanedHistory ];
   } else {
+    // Optimización de tokens: solo conserva la última imagen enviada si el chat se extiende
     let lastImageIndex = -1;
     for (let i = history.length - 1; i >= 0; i--) {
       if (Array.isArray(history[i].content)) {
         if (lastImageIndex === -1) {
-          lastImageIndex = i;
+          lastImageIndex = i; // Conservamos la captura más reciente
         } else {
+          // Reemplazamos imágenes viejas por texto simple para no saturar el límite de tokens diarios
           const textPart = history[i].content.find(p => p.type === 'text');
           history[i] = {
             role: history[i].role,
@@ -175,7 +178,7 @@ app.post('/webhook', async (req, res) => {
     const groqResponse = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       { 
-        model: 'qwen/qwen3.8-27b', 
+        model: 'qwen/qwen3.8-27b', // Modelo multimodal activo en Groq
         messages: messagesForAPI 
       },
       { headers: { Authorization: `Bearer ${GROQ_API_KEY}` } }
@@ -200,13 +203,3 @@ app.post('/webhook', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor "Cerebro" corriendo en el puerto ${PORT}`));
 ```[cite: 2, 3]
-
----
-
-### Guardar y subir a GitHub
-
-En tu terminal local[cite: 1]:
-```bash
-git add index.js
-git commit -m "Fix de sintaxis en index.js y cierre de llaves"
-git push origin main
