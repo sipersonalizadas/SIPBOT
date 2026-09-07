@@ -133,7 +133,7 @@ app.post('/webhook', async (req, res) => {
   try {
     const groqResponse = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
-      { model: 'llama3-8b-8192', messages: messagesForAPI },
+      { model: 'openai/gpt-oss-120b', messages: messagesForAPI },
       { headers: { Authorization: `Bearer ${GROQ_API_KEY}` } }
     );
     const botReply = groqResponse.data.choices[0].message.content.trim();
@@ -141,7 +141,6 @@ app.post('/webhook', async (req, res) => {
     if (isSummarizeTask) {
       console.log(`INFO: Resumen generado por la IA: "${botReply}"`);
       
-      // Se genera y envía el resumen a WhatsApp en cualquier momento 24/7
       const encodedSummary = encodeURIComponent(botReply);
       const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedSummary}`;
       res.status(200).json({ link: whatsappLink });
