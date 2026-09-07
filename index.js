@@ -175,4 +175,3 @@ app.post('/webhook', async (req, res) => {
 // --- ARRANQUE DEL SERVIDOR ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor "Cerebro" corriendo en el puerto ${PORT}`));
-```[cite: 2]
