@@ -17,33 +17,15 @@ if (!GROQ_API_KEY) {
     process.exit(1);
 }
 
-// Control horario: Lunes a Viernes de 8:00 AM a 5:00 PM (Hora Colombia UTC-5)
-function isBusinessHours() {
-    const now = new Date();
-    const options = { timeZone: 'America/Bogota', hour12: false, weekday: 'short', hour: 'numeric' };
-    const formatter = new Intl.DateTimeFormat('es-CO', options);
-    const parts = formatter.formatToParts(now);
-    
-    let day = '', hour = 0;
-    for (const p of parts) {
-        if (p.type === 'weekday') day = p.value.toLowerCase();
-        if (p.type === 'hour') hour = parseInt(p.value, 10);
-    }
-    
-    const isWeekend = day.startsWith('s') || day.startsWith('d');
-    const isWorkingHours = hour >= 8 && hour < 17;
-    
-    return !isWeekend && isWorkingHours;
-}
-
 // --- PROMPT 1: Para la conversación normal ---
 const conversationPrompt = `
 # PERFIL Y PERSONA
 Eres "SIPBOT", el asistente virtual de soporte técnico de primer nivel para "Soluciones Informáticas Personalizadas".
+- Disponibilidad: Estás disponible 24/7 para atender y orientar al usuario en cualquier momento.
 - Audiencia: Usuarios finales de oficina sin conocimientos técnicos ni privilegios de administrador.
 - Premisa clave de infraestructura: Todos los programas autorizados ya están instalados y configurados en sus computadores por el área de sistemas.
-- Tono: Claro, paciente, amable y con instrucciones paso a paso numeradas.
-- Misión: Resolver dudas de ofimática, guiar en el uso de las herramientas locales y preparar al usuario para la asistencia remota cuando sea necesario transferir a un técnico humano.
+- Tono: Claro, paciente, empático y estructurado con pasos numerados.
+- Misión: Resolver dudas de ofimática, capacitar en las herramientas autorizadas y preparar al usuario para la asistencia remota inmediata cuando sea necesario transferir a un técnico humano.
 
 # REGLAS DE OPERACIÓN
 
@@ -56,7 +38,7 @@ Eres "SIPBOT", el asistente virtual de soporte técnico de primer nivel para "So
 
 3. **INICIO DEL SOPORTE Y BIENVENIDA COMPLETA:**
    - Una vez que el usuario te dé su nombre, salúdalo amablemente y dale opciones claras:
-     "¡Hola [Nombre]! Estoy aquí para ayudarte. Puedo colaborarte con:
+     "¡Hola [Nombre]! Estoy aquí para ayudarte 24/7. Puedo colaborarte con:
      1. Dudas en Word (bibliografías, tablas de contenido, numeración).
      2. Fórmulas y funciones en Excel (BUSCAV, SUMAR.SI, filtros).
      3. Gestión de archivos PDF con PDF24 o visores (unir, separar, comprimir, firmar).
@@ -95,7 +77,7 @@ Eres "SIPBOT", el asistente virtual de soporte técnico de primer nivel para "So
    a) Cualquier acción solicite credenciales o permisos de Administrador de Windows (pantalla de UAC).
    b) El problema requiera instalación nueva, activación de licencia o reinstalación de drivers.
    c) Hay alertas activas de Bitdefender GravityZone o fallos de copia en Veeam Agent.
-   d) Se presenten fallas graves (pantallazos azules, ruidos anormales, pantallas sin señal, impresoras sin conexión en red).
+   d) Se presenten fallas graves (pantallazos azules, ruidos anormales, pantallas sin señal, impresoras desconectadas en red).
    e) Los pasos básicos y guías no resuelvan el problema.
 
    *PREPARACIÓN PARA REMOTO:* Antes de dar la frase de escalamiento, si el problema requiere revisión remota en el computador, indícale al usuario: "Por favor abre **AnyDesk** o **HopToDesk** en tu equipo (ya lo tienes instalado en tu escritorio o menú inicio) para que tengas tu número de puesto de trabajo listo cuando te atienda el técnico".
@@ -113,7 +95,7 @@ const summaryPrompt = `
 # TAREA ESTRICTA: RESUMEN DE SOPORTE
 Tu única función es leer el siguiente historial de chat y generar un resumen de una sola línea para un técnico. El resumen debe incluir el nombre del cliente (si lo encuentras), su empresa, el problema reportado y lo que ya se intentó.
 NO saludes. NO te despidas. NO añadas texto introductorio. Solo escribe la frase del resumen.
-EJEMPLO DE SALIDA PERFECTA: "Cliente: Juan Pérez de Transprensa. Problema: El mouse no funciona. Pasos intentados: Reiniciar el computador."
+EJEMPLO DE SALIDA PERFECTA: "Cliente: Juan Pérez de Ciek. Problema: El mouse no funciona. Pasos intentados: Reiniciar el computador."
 Ahora, resume el siguiente historial:
 `;
 
@@ -159,12 +141,8 @@ app.post('/webhook', async (req, res) => {
     if (isSummarizeTask) {
       console.log(`INFO: Resumen generado por la IA: "${botReply}"`);
       
-      let summaryText = botReply;
-      if (!isBusinessHours()) {
-        summaryText = `[FUERA DE HORARIO] ${botReply}`;
-      }
-
-      const encodedSummary = encodeURIComponent(summaryText);
+      // Se genera y envía el resumen a WhatsApp en cualquier momento 24/7
+      const encodedSummary = encodeURIComponent(botReply);
       const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedSummary}`;
       res.status(200).json({ link: whatsappLink });
     } else {
