@@ -7,7 +7,7 @@ const app = express();
 
 // --- CONFIGURACIÓN ---
 app.use(cors()); 
-// Aumentamos el límite para permitir las imágenes en Base64 sin error 413
+// Límite ampliado para procesar imágenes en Base64 sin error 413
 app.use(express.json({ limit: '15mb' })); 
 app.use(express.urlencoded({ limit: '15mb', extended: true }));
 
@@ -35,13 +35,13 @@ Eres "SIPBOT", el asistente virtual de soporte técnico de primer nivel para "So
 
 2. **VALIDACIÓN DE EMPRESA VIP:**
    - Empresas VIP autorizadas: "PLT", "Ciek", "Legalag". Acepta variaciones razonables.
-   - Si pertenece a la lista: Responde: "¡Excelente! Veo que la empresa es uno de nuestros clientes VIP. Para una atención más personalizada, ¿podrías indicarme tu nombre, por favor?". (Sustituye la frase "la empresa" por el nombre de la empresa del cliente, por ejemplo: Ciek).
+   - Si pertenece a la lista: Responde: "¡Excelente! Veo que la empresa es uno de nuestros clientes VIP. Para una atención más personalizada, ¿podrías indicarme tu nombre, por favor?". (Sustituye la palabra "la empresa" por el nombre de la empresa del cliente, por ejemplo: Ciek).
    - Si NO pertenece a la lista: Informa con cortesía que el canal es exclusivo para clientes con contrato vigente y redirige al WhatsApp general de la web. Detén la interacción.
 
-3. **INICIO DEL SOPORTE Y MANEJO DEL NOMBRE (SALUDO INTELIGENTE):**
+3. **INICIO DEL SOPORTE Y TRATAMIENTO DEL NOMBRE (FLUJO INTELIGENTE Y CONTINUO):**
    - NUNCA escribas la palabra literal "[Nombre]" ni utilices corchetes en tu respuesta.
-   - Si el usuario te indicó su nombre (ej. Carlos): Salúdalo como "¡Hola Carlos!".
-   - Si el usuario NO te dio su nombre, fue cortante o pasó directamente a explicar su problema: NO insistas ni te detengas; usa un saludo neutro: "¡Hola! Con todo gusto te ayudo."
+   - Si el usuario te indicó su nombre (por ejemplo: Carlos): Salúdalo como "¡Hola Carlos!".
+   - Si el usuario NO te dio su nombre, omitió responderlo o pasó directamente a contar su problema técnico: NO insistas con pedir el nombre, NO te frenes ni interrumpas el proceso. Usa inmediatamente un saludo neutro: "¡Hola! Con todo gusto te colaboro."
    - Inmediatamente presenta las opciones de soporte:
      "Estoy aquí para ayudarte 24/7. Puedo colaborarte con:
      1. Dudas en Microsoft Word (bibliografías, tablas de contenido, numeración).
@@ -51,7 +51,7 @@ Eres "SIPBOT", el asistente virtual de soporte técnico de primer nivel para "So
      ¿En qué te puedo colaborar hoy?"
 
 4. **PRECISIÓN EN NOMBRES DE APLICACIONES Y HERRAMIENTAS (OBLIGATORIO):**
-   Usa SIEMPRE la denominación oficial exacta de los programas. Queda prohibido abreviar o cambiar estos nombres:
+   Usa SIEMPRE la denominación oficial exacta de los programas. Queda prohibido abreviar o inventar nombres:
    - Ofimática: "Microsoft Word", "Microsoft Excel", "Microsoft PowerPoint" (o "Apache OpenOffice Writer", "Calc", "Impress").
    - PDFs: "PDF24 Creator", "Adobe Acrobat Reader", "Foxit Reader".
    - Compresor: "7-Zip".
@@ -137,7 +137,7 @@ app.post('/webhook', async (req, res) => {
         historyToSummarize.pop();
     }
 
-    // Convertir historial a texto plano para el resumen (ahorra tokens al descartar el base64 de la imagen)
+    // Convertir historial a texto plano para el resumen (ahorra tokens al descartar el base64)
     const cleanedHistory = historyToSummarize.map(msg => {
       if (Array.isArray(msg.content)) {
         const textPart = msg.content.find(p => p.type === 'text');
@@ -151,14 +151,13 @@ app.post('/webhook', async (req, res) => {
 
     messagesForAPI = [ { role: 'system', content: currentSystemPrompt }, ...cleanedHistory ];
   } else {
-    // Optimización de tokens: solo conserva la última imagen enviada si el chat se extiende
+    // Optimización de tokens: solo conserva la última imagen adjunta en el historial
     let lastImageIndex = -1;
     for (let i = history.length - 1; i >= 0; i--) {
       if (Array.isArray(history[i].content)) {
         if (lastImageIndex === -1) {
-          lastImageIndex = i; // Conservamos la captura más reciente
+          lastImageIndex = i;
         } else {
-          // Reemplazamos imágenes viejas por texto simple para no saturar el límite de tokens diarios
           const textPart = history[i].content.find(p => p.type === 'text');
           history[i] = {
             role: history[i].role,
@@ -178,7 +177,7 @@ app.post('/webhook', async (req, res) => {
     const groqResponse = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       { 
-        model: 'qwen/qwen3.8-27b', // Modelo multimodal activo en Groq
+        model: 'qwen/qwen3.8-27b', 
         messages: messagesForAPI 
       },
       { headers: { Authorization: `Bearer ${GROQ_API_KEY}` } }
