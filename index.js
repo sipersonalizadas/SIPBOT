@@ -181,5 +181,3 @@ app.post('/webhook', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor "Cerebro" corriendo en el puerto ${PORT}`));
 ```[cite: 2, 3]
-
-Pega este bloque exacto, corre `node index.js` en tu terminal local para cerciorarte de que levanta sin errores de sintaxis, y luego haz el push[cite: 1, 2].
